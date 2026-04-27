@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# mini-project-password-generator
-=======
 # Secure Password Generator
 
 A secure command-line password generator written in Rust that generates cryptographically secure random passwords based on configurable character types.
@@ -215,4 +212,3 @@ mini-project-password-generator/
 └── tests/
     └── tests.rs         # Integration tests
 ```
->>>>>>> 99639c6 (feat: initial commit - password generator project setup)
