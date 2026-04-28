@@ -1,185 +1,97 @@
-# 🔐 Password Generator
+# Password Generator
 
-A **secure command-line password generator** written in Rust, designed to generate cryptographically strong passwords for your various needs.
+Gerador de senhas em linha de comando, escrito em Rust, com foco em geração criptograficamente segura e regras explícitas de composição.
 
-## ✨ Features
+## Visão Geral
 
-- 🛡️ **Cryptographically Secure**: Uses `OsRng` for secure random number generation
-- 🔧 **Fully Configurable**: Customize password length and character sets
-- 🎯 **Selective Exclusions**: Exclude specific character types or characters
-- 💻 **Cross-Platform**: Works on Linux, macOS, and Windows
-- 📦 **Zero External Binaries**: Single binary, no runtime dependencies
-- 🧪 **Tested**: Includes comprehensive unit and integration tests
+O projeto gera uma ou mais senhas a partir dos grupos de caracteres selecionados por parâmetro.
 
-## 📦 Installation
+- Usa `OsRng` para obter entropia do sistema operacional.
+- Usa `ChaCha8Rng` como gerador pseudoaleatório para montar as senhas.
+- Exige que cada grupo informado apareça pelo menos uma vez na senha.
+- Falha com erro quando o tamanho solicitado não comporta todos os requisitos ativos.
+- Permite excluir caracteres específicos com `--exclude`.
 
-### From Source
+## Documentação
+
+As informações técnicas do projeto foram movidas para a pasta `docs`.
+
+- `docs/implementacao-tecnica.md`: stack, arquitetura, fluxo interno, estrutura do projeto, dependências e estratégia de testes.
+
+## Instalação
+
+### Executar localmente
 
 ```bash
-# Clone the repository
-git clone https://github.com/youruser/password-generator.git
-cd password-generator
+git clone https://github.com/Duskthoth/mini-project-password-generator.git
+cd mini-project-password-generator
+cargo run -- --lower --digits --length 16
+```
 
-# Build the release binary
+### Gerar binário de release
+
+```bash
 cargo build --release
-
-# Run the generator
-./target/release/password-generator
-```
-
-### Installation on Linux/macOS
-
-```bash
-# Install with cargo
-cargo install --path . --root /usr/local
-
-# Or add to PATH directly
-export PATH="$PWD/target/release:$PATH"
-```
-
-## 🚀 Usage
-
-### Basic Usage
-
-```bash
-# Generate a 12-character password (default)
-./target/release/password-generator
-
-# Generate a longer password
-./target/release/password-generator --length 20
-
-# Generate multiple passwords
-./target/release/password-generator --count 5
-```
-
-### Options
-
-| Option | Short | Description | Default |
-|--------|-------|-------------|---------|
-| `--length` | `-l` | Password length | 12 |
-| `--upper` | `-u` | Include uppercase letters | true |
-| `--lower` | `-L` | Include lowercase letters | true |
-| `--digits` | `-d` | Include numbers | true |
-| `--symbols` | `-s` | Include symbols | true |
-| `--exclude` | `-e` | Exclude character types | none |
-| `--count` | `-c` | Number of passwords to generate | 1 |
-
-### Examples
-
-```bash
-# Generate a password with only lowercase and numbers
 ./target/release/password-generator --lower --digits --length 16
-
-# Generate a password without special characters
-./target/release/password-generator --exclude '!' --exclude '"' --exclude '#'
-
-# Generate 10 passwords of length 16
-./target/release/password-generator --length 16 --count 10
-
-# Generate secure passwords for email (no symbols, uppercase, digits)
-./target/release/password-generator --length 14 --exclude '"~`{}|!@#$%^&*()_+-=[]\;:\'",\.<>?/'
 ```
 
-### Using Environment Variables
+No Windows, o executável gerado fica em `target/release/password-generator.exe`.
 
-The generator can use environment variables for default settings:
+## Uso
+
+Pelo menos um dos grupos `--upper`, `--lower`, `--digits` ou `--symbols` precisa ser informado. Se nenhum for passado, o programa retorna erro.
+
+### Opções disponíveis
+
+| Opção | Atalho | Descrição | Padrão |
+|--------|--------|-----------|--------|
+| `--length <N>` | `-l` | Tamanho da senha | `12` |
+| `--upper` | - | Inclui letras maiúsculas | `false` |
+| `--lower` | - | Inclui letras minúsculas | `false` |
+| `--digits` | - | Inclui dígitos | `false` |
+| `--symbols` | - | Inclui símbolos ASCII | `false` |
+| `--exclude <CHAR>` | `-e` | Exclui um caractere específico; pode ser repetido | vazio |
+| `--count <N>` | `-c` | Quantidade de senhas geradas | `1` |
+
+### Exemplos
 
 ```bash
-# Set default length
-export PASSWORD_LENGTH=20
+# Gera uma senha com minúsculas e dígitos
+cargo run -- --lower --digits
 
-# Set default character types
-export PASSWORD_UPPER=true
-export PASSWORD_DIGITS=true
-export PASSWORD_SYMBOLS=true
+# Gera 5 senhas de 20 caracteres com maiúsculas, minúsculas e dígitos
+cargo run -- --upper --lower --digits --length 20 --count 5
+
+# Gera uma senha com todos os grupos e garante ao menos 1 caractere de cada
+cargo run -- --upper --lower --digits --symbols --length 4
+
+# Exclui caracteres específicos
+cargo run -- --lower --digits --exclude a --exclude 0 --length 12
 ```
 
-## 🧪 Running Tests
+## Regras de Erro
+
+O programa encerra com erro nos seguintes casos:
+
+- nenhum grupo de caracteres foi selecionado;
+- um grupo foi selecionado, mas ficou vazio após as exclusões;
+- `length` é menor do que a quantidade de grupos selecionados.
+
+Exemplo:
 
 ```bash
-# Run all tests
-cargo test
-
-# Run tests with coverage
-cargo tarpaulin -o html
-
-# Run specific test
-cargo test --test integration
+cargo run -- --lower --digits --symbols --length 2
 ```
 
-## 📋 Project Structure
+Nesse caso, o comando falha porque 2 caracteres não são suficientes para satisfazer 3 requisitos ativos.
 
-```
-password-generator/
-├── src/
-│   └── main.rs          # Main application logic
-├── Cargo.toml           # Dependencies and build configuration
-├── .gitignore           # Git ignore rules
-├── README.md            # This file
-├── .env                 # Environment variables (optional)
-└── tests/
-    └── integration.rs   # Integration tests
-```
+## Limitações Atuais
 
-## 🔒 Security Considerations
+- não há configuração por arquivo;
+- não há presets prontos de política de senha;
+- não há medição de entropia;
+- não há suporte a conjuntos customizados além de exclusões individuais.
 
-- Uses `OsRng` for cryptographically secure random number generation
-- No hardcoded secrets or passwords in the codebase
-- Dependencies are audited for vulnerabilities
-- Single binary reduces attack surface
+## Licença
 
-## 📝 License
-
-This project is licensed under the MIT License - see the `LICENSE` file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 🙏 Acknowledgments
-
-- [Rust](https://www.rust-lang.org/) for building a safe and secure language
-- [rand](https://crates.io/crates/rand) for random number generation
-- [clap](https://crates.io/crates/clap) for command-line parsing
-
-## 📊 Benchmarks
-
-<<<<<<< HEAD
-| Length | Time per Password |
-|--------|-------------------|
-| 12     | ~0.5ms            |
-| 20     | ~0.8ms            |
-| 32     | ~1.2ms            |
-
-*Tests conducted on Intel i7-10700K*
-
----
-
-**Made with ❤️ by Duskthoth**
-=======
-```
-mini-project-password-generator/
-├── Cargo.toml           # Project dependencies and metadata
-├── Cargo.lock           # Locked dependencies
-├── README.md            # This file
-├── docs/
-│   ├── architecture.md  # Architecture documentation
-│   └── mermaid-diagrams.mmd # Mermaid diagram source
-├── src/
-│   ├── main.rs          # CLI entry point
-│   ├── password_generator.rs
-│   ├── config.rs
-│   ├── rand.rs
-│   ├── charset.rs
-│   ├── entropy.rs
-│   └── ...              # Other modules
-└── tests/
-    └── tests.rs         # Integration tests
-```
->>>>>>> fe5ad58010641517f02bde72266e7191dfd94fb6
+Projeto licenciado sob MIT.
