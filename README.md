@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # 🔐 Password Generator
+=======
+# Secure Password Generator
+>>>>>>> fe5ad58010641517f02bde72266e7191dfd94fb6
 
 A **secure command-line password generator** written in Rust, designed to generate cryptographically strong passwords for your various needs.
 
@@ -150,6 +154,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📊 Benchmarks
 
+<<<<<<< HEAD
 | Length | Time per Password |
 |--------|-------------------|
 | 12     | ~0.5ms            |
@@ -161,3 +166,24 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ---
 
 **Made with ❤️ by Duskthoth**
+=======
+```
+mini-project-password-generator/
+├── Cargo.toml           # Project dependencies and metadata
+├── Cargo.lock           # Locked dependencies
+├── README.md            # This file
+├── docs/
+│   ├── architecture.md  # Architecture documentation
+│   └── mermaid-diagrams.mmd # Mermaid diagram source
+├── src/
+│   ├── main.rs          # CLI entry point
+│   ├── password_generator.rs
+│   ├── config.rs
+│   ├── rand.rs
+│   ├── charset.rs
+│   ├── entropy.rs
+│   └── ...              # Other modules
+└── tests/
+    └── tests.rs         # Integration tests
+```
+>>>>>>> fe5ad58010641517f02bde72266e7191dfd94fb6
