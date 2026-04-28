@@ -13,23 +13,23 @@ struct Args {
     #[arg(short, long, default_value_t = 12)]
     length: usize,
 
-    /// Include uppercase letters (default: true)
+    /// Include uppercase letters
     #[arg(long, default_value_t = false)]
     upper: bool,
 
-    /// Include lowercase letters (default: true)
+    /// Include lowercase letters
     #[arg(long, default_value_t = false)]
     lower: bool,
 
-    /// Include digits (default: true)
+    /// Include digits
     #[arg(long, default_value_t = false)]
     digits: bool,
 
-    /// Include symbols (default: true)
+    /// Include symbols
     #[arg(long, default_value_t = false)]
     symbols: bool,
 
-    /// Exclude character types
+    /// Exclude specific characters
     #[arg(long, short = 'e')]
     exclude: Vec<char>,
 
