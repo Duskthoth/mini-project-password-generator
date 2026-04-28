@@ -1,0 +1,25 @@
+# Build artifacts
+target/
+
+# Rust-specific
+Cargo.lock
+**/target/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (optional)
+.env
+.env.*
+
+# Test artifacts
+*.log
+coverage/
