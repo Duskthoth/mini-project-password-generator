@@ -1,5 +1,6 @@
 use clap::Parser;
 use rand::{Rng, SeedableRng};
+use rand::seq::SliceRandom;
 use rand_chacha::ChaCha8Rng;
 
 #[derive(Parser, Debug)]
@@ -51,62 +52,89 @@ struct Args {
 /// * `Result<(), Box<dyn std::error::Error>>` - Success or error
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    
+
     // Use OsRng as seed for ChaCha8Rng to ensure cryptographic security
     let seed = rand::rngs::OsRng.gen();
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
 
-    let mut all_chars = String::new();
+    let mut char_groups: Vec<(&str, Vec<char>)> = Vec::new();
 
     // Build character set based on enabled options, excluding specified characters
     if args.upper {
-        for c in 'A'..='Z' {
-            if !args.exclude.contains(&c) {
-                all_chars.push(c);
-            }
-        }
+        let chars: Vec<char> = ('A'..='Z')
+            .filter(|c| !args.exclude.contains(c))
+            .collect();
+        char_groups.push(("uppercase", chars));
     }
 
     if args.lower {
-        for c in 'a'..='z' {
-            if !args.exclude.contains(&c) {
-                all_chars.push(c);
-            }
-        }
+        let chars: Vec<char> = ('a'..='z')
+            .filter(|c| !args.exclude.contains(c))
+            .collect();
+        char_groups.push(("lowercase", chars));
     }
 
     if args.digits {
-        for c in '0'..='9' {
-            if !args.exclude.contains(&c) {
-                all_chars.push(c);
-            }
-        }
+        let chars: Vec<char> = ('0'..='9')
+            .filter(|c| !args.exclude.contains(c))
+            .collect();
+        char_groups.push(("digits", chars));
     }
 
     if args.symbols {
         let sym = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
-        for c in sym.chars() {
-            if !args.exclude.contains(&c) {
-                all_chars.push(c);
-            }
-        }
+        let chars: Vec<char> = sym
+            .chars()
+            .filter(|c| !args.exclude.contains(c))
+            .collect();
+        char_groups.push(("symbols", chars));
     }
 
     // Validate that at least one character type is selected
-    if all_chars.is_empty() {
+    if char_groups.is_empty() {
         eprintln!("Error: No character types selected.");
         std::process::exit(1);
     }
 
+    if let Some((group_name, _)) = char_groups.iter().find(|(_, chars)| chars.is_empty()) {
+        eprintln!(
+            "Error: Cannot satisfy the selected {} requirement with the current exclusions.",
+            group_name
+        );
+        std::process::exit(1);
+    }
+
+    if args.length < char_groups.len() {
+        eprintln!(
+            "Error: Password length ({}) is too short to satisfy {} selected requirements.",
+            args.length,
+            char_groups.len()
+        );
+        std::process::exit(1);
+    }
+
+    let all_chars: Vec<char> = char_groups
+        .iter()
+        .flat_map(|(_, chars)| chars.iter().copied())
+        .collect();
+
     // Generate the specified number of passwords
     for _ in 0..args.count {
-        let password: String = (0..args.length)
-            .map(|_| {
-                // Securely select a random character from the available set
-                let idx = rng.gen_range(0..all_chars.len());
-                all_chars.chars().nth(idx).unwrap()
+        let mut password_chars: Vec<char> = char_groups
+            .iter()
+            .map(|(_, chars)| {
+                let idx = rng.gen_range(0..chars.len());
+                chars[idx]
             })
             .collect();
+
+        while password_chars.len() < args.length {
+            let idx = rng.gen_range(0..all_chars.len());
+            password_chars.push(all_chars[idx]);
+        }
+
+        password_chars.shuffle(&mut rng);
+        let password: String = password_chars.into_iter().collect();
 
         println!("{}", password);
     }
