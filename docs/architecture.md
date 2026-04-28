@@ -1,251 +1,131 @@
-# Rust CLI Password Generator - Architecture
+# Password Generator - Architecture
 
-## High-Level Architecture Diagram
+## Overview
 
-```mermaid
-graph TD
-    subgraph "Command Line Interface Layer"
-        CLI[CLI Entry Point\nmain.rs]
-        Args[Argument Parsing\nclap/structopt]
-        Config[Configuration Parser\nconfig.rs]
-    end
+The Password Generator is a command-line utility written in Rust that generates cryptographically secure random passwords.
 
-    subgraph "Core Logic Layer"
-        PasswordGen[Password Generator\npassword_generator.rs]
-        RNG[Random Number Generator\nrand.rs]
-        CharSets[Character Set Builder\ncharsets.rs]
-    end
+## Project Structure
 
-    subgraph "Utilities Layer"
-        Validation[Input Validation\nvalidator.rs]
-        PasswordPolicy[Password Policy Checker\npolicy.rs]
-        Entropy[Entropy Calculator\nentropy.rs]
-    end
-
-    subgraph "Output Layer"
-        Display[Password Display\nformatter.rs]
-        Security[Secure Output\nsecure_write.rs]
-    end
-
-    CLI --> Args
-    CLI --> Config
-    Args --> PasswordGen
-    Config --> PasswordGen
-    PasswordGen --> RNG
-    PasswordGen --> CharSets
-    PasswordGen --> Validation
-    Validation --> PasswordGen
-    PasswordGen --> Entropy
-    PasswordGen --> Display
-    Display --> Security
+```
+password-generator/
+├── Cargo.toml              # Project dependencies
+├── docs/
+│   ├── architecture.md     # This file
+│   └── documentation.md    # General documentation
+├── src/
+│   └── main.rs             # Main source code
+└── target/
+    └── release/
+        └── password-generator/  # Compiled binary
 ```
 
-## Detailed Module Architecture
+## Dependencies
 
-```mermaid
-graph TB
-    subgraph "Entry Point"
-        main[main.rs<br/>CLI Entry Point]
-    end
+### Cargo.toml
 
-    subgraph "Configuration"
-        config[config.rs<br/>Configuration Management]
-        config2[settings.rs<br/>Default Settings]
-        config3[config.toml<br/>User Config File]
-    end
+```toml
+[package]
+name = "password-generator"
+version = "0.1.0"
+edition = "2021"
+authors = ["Duskthoth"]
 
-    subgraph "Argument Parser"
-        clap[clap.rs<br/>Command Line Arguments]
-        subcmd[Subcommands<br/>generate/help/version]
-    end
-
-    subgraph "Core Components"
-        password_gen[password_generator.rs<br/>Main Generation Logic]
-        rand[rand.rs<br/>CSPRNG Integration]
-        charset[charset.rs<br/>Character Set Management]
-    end
-
-    subgraph "Character Types"
-        lower[lowercase_chars.rs<br/>a-z]
-        upper[uppercase_chars.rs<br/>A-Z]
-        digits[digits_chars.rs<br/>0-9]
-        special[special_chars.rs<br/>!@#$%^&*]
-    end
-
-    subgraph "Security & Validation"
-        entropy[entropy.rs<br/>Strength Analysis]
-        policy[password_policy.rs<br/>Policy Enforcement]
-        validate[input_validation.rs<br/>Input Sanitization]
-    end
-
-    subgraph "Output"
-        formatter[formatter.rs<br/>Output Formatting]
-        secure[secure_io.rs<br/>Secure Output Writing]
-    end
-
-    main --> clap
-    main --> config
-    clap --> subcmd
-    config --> config2
-    config --> config3
-    subcmd --> password_gen
-    password_gen --> rand
-    password_gen --> charset
-    password_gen --> lower
-    password_gen --> upper
-    password_gen --> digits
-    password_gen --> special
-    password_gen --> entropy
-    password_gen --> policy
-    password_gen --> validate
-    password_gen --> formatter
-    password_gen --> secure
+[dependencies]
+clap = { version = "4.4.11", features = ["derive"] }  # CLI parsing
+rand = "0.8.5"                                        # Random generation
+rand_chacha = "0.3.1"                                 # Secure RNG
+serde = { version = "1.0", features = ["derive"] }    # Serialization
+serde_json = "1.0"                                    # JSON support
 ```
 
-## Data Flow Diagram
+## Core Components
 
-```mermaid
-sequenceDiagram
-    participant User as User
-    participant CLI as CLI Parser
-    participant Config as Config
-    participant Validate as Validator
-    participant Charset as CharSet Manager
-    participant Rand as CSPRNG
-    participant Generator as Password Generator
-    participant Formatter as Formatter
-    participant Secure as Secure Output
+### 1. Arguments Parser (Clap)
 
-    User->>CLI: --length=12 --lower --upper --digits --special
-    User->>Config: --config config.toml
-    CLI->>Validate: Validate arguments
-    Validate-->>CLI: ✓ Valid or ✗ Error message
-    Config->>Charset: Get character sets based on flags
-    Charset-->>Generator: [lower, upper, digits, special]
-    Rand->>Rand: Generate secure random bytes
-    Rand-->>Generator: Random index values
-    Generator->>Generator: Build password string
-    Generator->>Formatter: Format output
-    Formatter->>Secure: Write to stdout
-    Secure-->>User: Password
+Uses `clap` for command-line argument parsing with:
+- Type-safe argument definitions
+- Automatic help generation
+- Error handling and suggestions
+- Default values
+
+### 2. Random Number Generator
+
+Uses `rand_chacha::ChaCha8Rng` for cryptographically secure random numbers.
+Seeded with `rand::rngs::OsRng` for true randomness from OS.
+
+### 3. Character Set Builder
+
+Builds character set based on user preferences:
+- Uppercase letters (A-Z)
+- Lowercase letters (a-z)
+- Digits (0-9)
+- Special symbols
+
+### 4. Password Generator
+
+1. Filters character set based on user options
+2. For each character position:
+   - Generates random index
+   - Selects character at that index
+   - Appends to password string
+3. Returns generated password
+
+## Command-Line Interface
+
+### Usage
+
+```bash
+password-generator [OPTIONS]
 ```
 
-## Component Dependencies
+### Options
 
-```mermaid
-mindmap
-  root((Password Generator))
-    CLI Layer
-      main.rs
-        Entry point
-        Argument parsing
-        Subcommands
-    Configuration
-      config.rs
-        TOML parsing
-        Default values
-        Environment variables
-      config.toml
-        Length
-        Character sets
-        Output format
-    Core
-      password_generator.rs
-        Generation loop
-        Set management
-      rand.rs
-        /dev/urandom
-        rand::random
-      charset.rs
-        Character pools
-        Set management
-    Security
-      entropy.rs
-        Shannon entropy
-        Bit strength
-      password_policy.rs
-        Min/max length
-        Character requirements
-    Output
-      formatter.rs
-        One-liner
-        Multi-line
-      secure_io.rs
-        /dev/stdout
-        Buffer flushing
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--length` | `-l` | Password length | 12 |
+| `--upper` | - | Include uppercase letters | true |
+| `--lower` | - | Include lowercase letters | true |
+| `--digits` | - | Include digits | true |
+| `--symbols` | - | Include symbols | true |
+| `--exclude` | `-e` | Exclude character types | [] |
+| `--count` | `-c` | Number of passwords | 1 |
+
+### Examples
+
+```bash
+# Generate one password (default 12 chars)
+password-generator
+
+# Generate 5 passwords of length 16
+password-generator --length 16 --count 5
+
+# Generate without digits
+password-generator --digits false
 ```
-
-## File Structure
-
-```mermaid
-mindmap
-  type((mini-project-password-generator/))
-    Cargo.toml
-      Dependencies
-      Metadata
-    src
-      main.rs
-      password_generator.rs
-      config.rs
-      rand.rs
-      charset.rs
-      entropy.rs
-      policy.rs
-      validation.rs
-      formatter.rs
-      secure_io.rs
-    tests
-      integration_tests.rs
-      generation_tests.rs
-    docs
-      architecture.md
-      API.md
-    config.toml
-      Sample configuration
-    README.md
-    Cargo.lock
-```
-
-## Example Command Flow
-
-```mermaid
-flowchart LR
-    A[User runs command] --> B{Parse arguments}
-    B -->|Success| C[Load config]
-    B -->|Error| D[Show error]
-    D --> E[Exit]
-    C --> F{Validate input}
-    F -->|Pass| G[Build char sets]
-    F -->|Fail| D
-    G --> H[Generate password]
-    H --> I[Check entropy]
-    I --> J[Format output]
-    J --> K[Display password]
-```
-
-## Key Technologies Used
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| CLI Parsing | `clap` or `structopt` | Command-line argument handling |
-| Random Generation | `rand` + `/dev/urandom` | Cryptographically secure RNG |
-| Configuration | `toml` | Structured config file |
-| Validation | Custom modules | Input validation |
-| Output | Direct stdout | Secure display |
 
 ## Security Considerations
 
-```mermaid
-graph LR
-    A[User Input] --> B{Validate}
-    B -->|Clean| C[Secure RNG]
-    C --> D[Character Sets]
-    D --> E[Generate]
-    E --> F{Entropy Check}
-    F -->|Insufficient| G[Warning]
-    F -->|Adequate| H[Output]
-    H --> I[Clear Memory]
-    I --> J[Exit]
-    G --> J
-    B -->|Malicious| J
-```
+- **Cryptographically Secure RNG**: Uses ChaCha8Rng
+- **Seeding**: Randomly seeded with OS entropy via `OsRng`
+- **Character Distribution**: All types equally likely
+
+## Performance
+
+- **Fast Generation**: Efficient ChaCha8Rng
+- **Minimal Overhead**: Simple filtering
+- **Optimized Build**: Compiled with `--release`
+
+## Error Handling
+
+- Empty character set exits with error code 1
+- Invalid arguments show helpful messages
+- Defaults to all types unless disabled
+
+## Future Improvements
+
+1. Custom character set input
+2. Pattern validation
+3. Progress indicator
+4. Export to files (JSON, CSV)
+5. Password strength meter
+6. Locale-specific character sets
