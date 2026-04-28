@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # 🔐 Password Generator
-=======
-# Secure Password Generator
->>>>>>> fe5ad58010641517f02bde72266e7191dfd94fb6
 
 A **secure command-line password generator** written in Rust, designed to generate cryptographically strong passwords for your various needs.
 

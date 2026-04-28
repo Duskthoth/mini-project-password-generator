@@ -1,5 +1,6 @@
 use assert_cmd::prelude::*;
 use std::process::Command;
+use predicates::prelude::*;
 
 #[test]
 fn it_generates_a_password() {
@@ -63,3 +64,58 @@ fn it_fails_when_no_character_types_selected() {
         .failure()
         .stderr(predicates::str::contains("No character types selected"));
 }
+
+#[test]
+fn test_basic_generation() {
+    let mut cmd = Command::cargo_bin("password-generator").unwrap();
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::is_empty().not());
+}
+
+#[test]
+fn it_respects_lower_option() {
+    let mut cmd = Command::cargo_bin("password-generator").unwrap();
+    cmd.arg("--lower")
+        .arg("false")
+        .assert()
+        .failure();
+}
+
+#[test]
+fn it_respects_upper_option() {
+    let mut cmd = Command::cargo_bin("password-generator").unwrap();
+    cmd.arg("--upper")
+        .arg("false")
+        .assert()
+        .failure();
+}
+
+#[test]
+fn test_length_option() {
+    let mut cmd = Command::cargo_bin("password-generator").unwrap();
+    cmd.arg("--length")
+        .arg("15")
+        .assert()
+        .success()
+        .stdout(predicate::str::len(15));
+}
+
+#[test]
+fn test_count_option() {
+    let mut cmd = Command::cargo_bin("password-generator").unwrap();
+    cmd.arg("--count")
+        .arg("3")
+        .assert()
+        .success();
+}
+
+#[test]
+fn test_exclusion_functionality() {
+    let mut cmd = Command::cargo_bin("password-generator").unwrap();
+    cmd.arg("--exclude")
+        .arg("a")
+        .assert()
+        .success();
+}
+
